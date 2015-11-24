@@ -1,0 +1,19 @@
+default: &default
+  adapter: mysql
+  username: root
+  password: root
+  host: localhost
+
+development:
+  <<: *default
+  database: ticketing-oauth-service_development
+
+test:
+  <<: *default
+  database: ticketing-oauth-service_test
+
+production:
+  <<: *default
+  database: ticketing-oauth-service_production
+  username: ticketing-oauth-service
+  password: <%= ENV['TICKETING-OAUTH-SERVICE_DATABASE_PASSWORD'] %>
