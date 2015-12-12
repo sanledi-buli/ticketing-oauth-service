@@ -25,7 +25,7 @@ class Customer < ActiveRecord::Base
                        format: { with: PASSWORD_PATTERN },
                        length: { minimum: 8 }
 
-  enum status: [:non_active, :active, :blacklist]
+  enum status: [:unverified, :non_active, :active, :blacklist]
 
   before_validation :replace_country_code_indonesia, :downcase_email
 

@@ -53,7 +53,7 @@ RSpec.describe Customer, type: :model do
     it { should_not allow_value("foo*&^(bar123").for(:password) }
     it { should allow_value("QweRty1234").for(:password) }
 
-    it { should define_enum_for(:status).with([:non_active, :active, :blacklist]) }
+    it { should define_enum_for(:status).with([:unverified, :non_active, :active, :blacklist]) }
 
   end
 
@@ -74,6 +74,13 @@ RSpec.describe Customer, type: :model do
       customer = build_customer_with_options(mobile_phone: country_code+phone)
       customer.save!
       expect(customer.mobile_phone).to eq(country_code+phone)
+    end
+
+    it "should downcase the email." do
+      upper_email = "FOO@BAZ.COM"
+      customer = build_customer_with_options(email: upper_email)
+      customer.save!
+      expect(customer.email).to eq(upper_email.downcase!)
     end
   end
 
