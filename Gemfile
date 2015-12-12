@@ -16,3 +16,8 @@ group :development, :test do
   gem 'factory_girl_rails'
   gem 'timecop'
 end
+
+group :test do
+  gem 'shoulda-matchers', '~> 3.0'
+  gem 'shoulda-callback-matchers', '~> 1.1.1'
+end

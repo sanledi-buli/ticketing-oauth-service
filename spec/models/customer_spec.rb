@@ -4,163 +4,77 @@ RSpec.describe Customer, type: :model do
     build(:customer, options)
   end
 
-  let(:customer) { FactoryGirl.create(:customer) }
+  before(:each) do
+    @customer = FactoryGirl.create(:customer)
+  end
 
   after(:each) do
     Customer.delete_all
   end
 
-  describe 'validates' do
+  describe "ActiveModel validations" do
+    it { should validate_presence_of(:first_name) }
+    it { should_not allow_value(" ").for(:first_name) }
+    it { should_not allow_value("foo'bar").for(:first_name) }
+    it { should allow_value("foo bar").for(:first_name) }
+    it { should validate_length_of(:first_name).is_at_most(25) }
+    
+    it { should_not validate_presence_of(:last_name) }
+    it { should_not allow_value("foo'bar").for(:last_name) }
+    it { should allow_value("foo bar").for("last_name") }
+    it { should validate_length_of(:last_name).is_at_most(25) }
 
-    context "#first_name" do
+    it { should validate_presence_of(:mobile_phone) }
+    it { should_not allow_value("+629990jskaka").for(:mobile_phone) }
+    it { should allow_value("+620000000").for(:mobile_phone) }
 
-      it "should not valid if not present." do
-        customer = build_customer_with_options(first_name: nil)
-        expect(customer.valid?).to be_falsy
-      end
+    it { should_not validate_presence_of(:phone) }
 
-      it "should not valid if contains special characters." do
-        customer = build_customer_with_options(first_name: "foo'bar")
-        expect(customer.valid?).to be_falsy
-      end
+    it { should validate_presence_of(:email) }
+    it { should validate_uniqueness_of(:email).case_insensitive }
+    it { should_not allow_value("@foo.baz").for(:email) }
+    it { should_not allow_value("bar@.baz").for(:email) }
+    it { should_not allow_value("bar@foo").for(:email) }
+    it { should allow_value("bar123@foo.baz").for(:email) }
 
-      it "should valid if contains multiple words." do
-        customer = build_customer_with_options(first_name: "foo")
-        expect(customer.valid?).to eq true
-      end
+    it { should validate_presence_of(:card_id) }
 
-      it "should not valid if lenght more than 25 characters." do
-        customer = build_customer_with_options(first_name: "foobar foobar foobar foobar")
-        expect(customer.valid?).to be_falsy
-      end
+    it { should validate_presence_of(:address) }
+    it { should validate_length_of(:address).is_at_most(50) }
 
+    it { should validate_presence_of(:city) }
+
+    it { should validate_presence_of(:nationality) }
+
+    it { should validate_presence_of(:country) }
+
+    it { should validate_presence_of(:password) }
+    it { should validate_length_of(:password).is_at_least(8) }
+    it { should_not allow_value("foo*&^(bar123").for(:password) }
+    it { should allow_value("QweRty1234").for(:password) }
+
+    it { should define_enum_for(:status).with([:non_active, :active, :blacklist]) }
+
+  end
+
+  context "callbacks" do
+    it { is_expected.to callback(:replace_country_code_indonesia).before(:validation) }
+    it { is_expected.to callback(:downcase_email).before(:validation) }
+    it "should replace Indonesian country code with zero." do
+      phone = "810000000"
+      country_code = "+62"
+      customer = build_customer_with_options(mobile_phone: country_code+phone)
+      customer.save!
+      expect(customer.mobile_phone).to eq("0"+phone)
     end
 
-    context "#last_name" do
-
-      it "should valid if not present." do
-        customer = build_customer_with_options(last_name: nil)
-        expect(customer.valid?).to eq true
-      end
-
-      it "should not valid if contains special characters." do
-        customer = build_customer_with_options(last_name: "foo'bar")
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if lenght more than 25 characters." do
-        customer = build_customer_with_options(last_name: "foobar foobar foobar foobar")
-        expect(customer.valid?).to be_falsy
-      end
-    end
-
-    context "#mobile_phone" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(mobile_phone: nil)
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if wrong format." do
-        customer = build_customer_with_options(mobile_phone: "+6298jsjsjs")
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should valid if add country code." do
-        customer = build_customer_with_options(mobile_phone: +6281000000)
-        expect(customer.valid?).to eq true
-      end
-
-      it "should replace the Indonesian country code with zero" do
-        phone = "81000000"
-        code = "+62"
-        customer = build_customer_with_options(mobile_phone: code+phone)
-        customer.save!
-        expect(customer.mobile_phone).to eq("0"+phone)
-      end
-
-      it "should not replace the Other country code with zero." do
-        phone = "901111111"
-        code = "+81"
-        customer = build_customer_with_options(mobile_phone: code+phone)
-        customer.save!
-        expect(customer.mobile_phone).to eq(code+phone)
-      end
-    end
-
-    context "#email" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(email: nil)
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if missing domain." do
-        customer = build_customer_with_options(email: "foo@.bar")
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if missing top level domain." do
-        customer = build_customer_with_options(email: "foo@bar.")
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if duplicate email." do
-        customer = build_customer_with_options(email: "foo@bar.baz")
-        customer.save!
-        duplicate_customer = build_customer_with_options(email: customer.email)
-        expect(duplicate_customer.valid?).to be_falsy
-      end
-
-      it "should not error if format is valid." do
-        customer = build_customer_with_options(email: "foo@bar.baz")
-        expect(customer.valid?).to eq true
-      end
-    end
-
-    context "#card_id" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(card_id: nil)
-        expect(customer.valid?).to be_falsy
-      end
-    end
-
-    context "#address" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(address: nil)
-        expect(customer.valid?).to be_falsy
-      end
-
-      it "should not valid if lenght more than 50 characters." do
-        customer = build_customer_with_options(address: "foobar foobar foobar foobar foobar foobar foobar foobar ")
-        expect(customer.valid?).to be_falsy
-      end
-    end
-
-    context "#city" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(city: nil)
-        expect(customer.valid?).to be_falsy
-      end
-    end
-
-    context "#country" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(country: nil)
-        expect(customer.valid?).to be_falsy
-      end
-    end
-
-    context "#nationality" do
-
-      it "should not valid if not present." do
-        customer = build_customer_with_options(nationality: nil)
-        expect(customer.valid?).to be_falsy
-      end
+    it "should not replace the Other country code with zero." do
+      phone = "810000000"
+      country_code = "+81"
+      customer = build_customer_with_options(mobile_phone: country_code+phone)
+      customer.save!
+      expect(customer.mobile_phone).to eq(country_code+phone)
     end
   end
+
 end

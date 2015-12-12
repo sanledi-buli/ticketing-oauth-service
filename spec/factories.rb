@@ -10,5 +10,6 @@ FactoryGirl.define do
     city "Jakarta"
     country "Indonesia"
     nationality "Indonesia"
+    password "Qwerty1234"
   end
 end
